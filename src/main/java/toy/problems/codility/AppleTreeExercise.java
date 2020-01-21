@@ -21,6 +21,7 @@ public class AppleTreeExercise {
 		Worker alice = new Worker(3);
 		Worker bob = new Worker(2);
 		List<Worker> workers = List.of(alice, bob);
+		@SuppressWarnings("unused")
 		Orchard orchard = new Orchard(A, workers);
 
 		Optional<WorkOrder> wo = alice.getWorkAssignments()

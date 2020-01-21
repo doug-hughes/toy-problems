@@ -1,4 +1,4 @@
-package com.uhg;
+package toy.problems.codility;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -12,9 +12,9 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 
-import com.uhg.AppleTreeExercise.IntBetween;
-import com.uhg.AppleTreeExercise.WorkAssignment;
-import com.uhg.AppleTreeExercise.Worker;
+import toy.problems.codility.AppleTreeExercise.IntBetween;
+import toy.problems.codility.AppleTreeExercise.WorkAssignment;
+import toy.problems.codility.AppleTreeExercise.Worker;
 
 public class AppleTreeExerciseTest {
 
