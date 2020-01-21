@@ -1,0 +1,7 @@
+plugins {
+	id "java"
+}
+group = "toy.problems"
+version = "0.0.1-SNAPSHOT"
+sourceCompatibility = JavaVersion.VERSION_12
+targetCompatibility = JavaVersion.VERSION_12
