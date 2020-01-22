@@ -79,32 +79,18 @@ public class BulbExercise {
 	}
 	
 	// Consider using state pattern ShiningBulb DimBulb
-	public class Bulb implements ShineObserver{
-		private boolean shining = false; // set by evalShining()
+	public abstract class Bulb {
+		boolean shining = false; // set by evalShining()
 		private int id;
 		private boolean on = false;
 		private Bulb predecessor;
-		private ShineObserver shineObserver;
 
-		Bulb(int id) {
-			this.id = id;
-		}
-		Bulb(int id, Bulb predecessor) {
-			this.id = id;
-			setPredecessorAndObserver(predecessor);
-		}
 		// only exposed for testing
 		Bulb(int id, boolean on, boolean shine, Bulb predecessor) {
 			this.id = id;
 			this.shining = shine;
 			this.on = on;
-			setPredecessorAndObserver(predecessor);
-		}
-		private void setPredecessorAndObserver(Bulb predecessor) {
 			this.predecessor = predecessor;
-			if (predecessor != null) {
-				predecessor.setShineObserver(this);
-			}
 		}
 
 		void turnOn() {
@@ -121,12 +107,6 @@ public class BulbExercise {
 			return this.on;
 		}
 		
-		void evalShining() {
-			// don't check predecessor if I'm shining
-			if (!isShining()) {
-				setShining(isOn() && predecessorShines());
-			}
-		}
 		private boolean predecessorShines() {
 			if (this.predecessor != null) {
 				this.predecessor.evalShining();
@@ -134,18 +114,6 @@ public class BulbExercise {
 			} else {
 				// when no predecessor, shine when on
 				return true;
-			}
-		}
-
-		// once it shines it stays lit
-		// alert observers when we change from dim to shine
-		void setShining(boolean shining) {
-			System.out.printf("%s setShining %s%n", getId(), shining);
-			if (shining) {
-				if (!this.shining && this.shineObserver != null) {
-					this.shineObserver.shineAlertHandler();
-				}
-				this.shining = shining;
 			}
 		}
 
@@ -157,23 +125,55 @@ public class BulbExercise {
 		public String toString() {
 			return "Bulb [isShining=" + shining + ", id=" + id + ", on=" + on + "]";
 		}
+	}
+	
+	public class DimBulb extends Bulb implements ShineObserver {
+		private ShineObserver shineObserver;
+
+		DimBulb(int id) {
+			super(id, false, false, null);
+		}
+		DimBulb(int id, Bulb predecessor) {
+			super(id, false, false, predecessor);
+			if (predecessor != null && predecessor instanceof ShineObserver) {
+				((ShineObserver)predecessor).setShineObserver(this);
+			}
+		}
+		
+		// once it shines it stays lit
+		// alert observers when we change from dim to shine
+		void setShining(boolean shining) {
+			System.out.printf("%s setShining %s%n", getId(), shining);
+			if (shining) {
+				if (!this.shining && this.shineObserver != null) {
+					this.shineObserver.shineAlertHandler();
+				}
+				this.shining = shining;
+			}
+		}
+		void evalShining() {
+			// don't check predecessor if I'm shining
+			if (!isShining()) {
+				setShining(isOn() && predecessorShines());
+			}
+		}
+
+		@Override
+		public void setShineObserver(ShineObserver neighbor) {
+			this.shineObserver = neighbor;
+		}
 		@Override
 		public void shineAlertHandler() {
 			// neighbor is shining, so if we are on we should now be shining 
 			setShining(isOn());
 		}
-		@Override
-		public void setShineObserver(ShineObserver neighbor) {
-			this.shineObserver = neighbor;
-		}
 	}
-	
-//	public class DimBulb implements Bulb, ShineObserver {
-//		
-//	}
-//	public class ShiningBulb implements Bulb {
-//		
-//	}
+	public class ShiningBulb extends Bulb {
+		ShiningBulb(int id) {
+			super(id, true, true, null);
+		}
+		
+	}
 	public static void main(String[] args) {
 		int[] myInt = { 1, 3, 2, 5, 4 };
 		BulbExercise mySolution = new BulbExercise();
