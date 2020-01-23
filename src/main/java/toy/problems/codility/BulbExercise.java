@@ -1,90 +1,120 @@
 package toy.problems.codility;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class BulbExercise {
 	 
 		public int solution(int[] A) {
-			int allOnCount = 0;
 			StringOfLights sol = new StringOfLights(A);
-			sol.print();
-			for (int bulbId : A) {
+			System.out.printf("%s ", sol.printOnState());
+			System.out.println(sol.printShiningState());
+			for (int i = 0; i < A.length; i++) {
 				sol.turnOnNext();
-				sol.print();
-				if (sol.getNumberBulbsOn() == sol.getNumberBulbsShining()) {
-					allOnCount++;
-				}
+				System.out.printf("%s ", sol.printOnState());
+				System.out.println(sol.printShiningState());
 			}
-			System.out.println("AllOnCount: " + allOnCount);
-			return allOnCount;
+			System.out.println("AllOnCount: " + sol.getCountAllShining());
+			return sol.getCountAllShining();
 		}
+		interface ShineObserver {
+			void shineAlertHandler();
+		}
+		interface Shiner {
+			void registerShineObserver(ShineObserver neighbor);
+		}
+		
 
-	class StringOfLights {
+	static class StringOfLights {
 		private final int[] order;
 		// number on indicates where we are on the order array
 		private int numberBulbsOn = 0;
 		// represents the next bulb to evaluate after on event
-		private int numberBulbsShining = 0;
-		private final List<Bulb> lightString;
+		private AtomicInteger numberBulbsShining = new AtomicInteger(0);
+		// increment when all bulbs on are shining
+		private AtomicInteger countAllShining = new AtomicInteger(0);
+		private final Bulb[] lightString;
 
 		StringOfLights(int[] order) {
 			this.order = order;
-			lightString = initialize();
+			this.lightString = initializeLightString();
 		}
 
 		public int getNumberBulbsOn() {
-			return numberBulbsOn;
+			return this.numberBulbsOn;
 		}
 
 		public int getNumberBulbsShining() {
-			return numberBulbsShining;
+			return this.numberBulbsShining.intValue();
+		}
+		
+		public int getCountAllShining() {
+			return this.countAllShining.intValue();
+		}
+		// for testing
+		Stream<Bulb> stream() {
+			return Arrays.stream(this.lightString);
 		}
 
 		// create a chain of lights where each has reference to preceding neighbor
-		private List<Bulb> initialize() {
+		// e.g. if the order is 1,3,2,5,4 then 1 <- 3 <- 2 <- 5 <- 4
+		// the lightString will always be [1, 2, 3, 4, 5]
+		// because we can always find the bulb based on its representative id number 
+		// e.g. bulb with id=4 is located at lightString[4 - 1] 
+		private Bulb[] initializeLightString() {
 			Bulb[] bulbs = new Bulb[this.order.length];
-			for (int i = 0; i < bulbs.length; i++) {
-				bulbs[i] = new Bulb(i + 1);
+			Bulb predecessor = null;
+			for (int i = 0; i < order.length; i++) {
+				int bulbId = i + 1;
+//				int idx = bulbId - 1;
+				bulbs[i] = new Bulb(bulbId, predecessor);
+				bulbs[i].registerShineObserver(new ShineObserver() {
+					@Override
+					public void shineAlertHandler() {
+						int currentNumShining = numberBulbsShining.incrementAndGet(); 
+						if (currentNumShining == getNumberBulbsOn()) {
+							countAllShining.incrementAndGet();
+						}
+					}
+				});
+				predecessor = bulbs[i];
 			}
-			return Arrays.asList(bulbs);
+			return bulbs;
 		}
-
 		public void turnOnNext() {
-			int zeroBasedIndex = this.order[numberBulbsOn++] - 1;
-			lightString.get(zeroBasedIndex).turnOn();
-			while (numberBulbsShining <= zeroBasedIndex) {
-				if (lightString.get(zeroBasedIndex).isOn()) {
-					lightString.get(zeroBasedIndex).setShining(true);
-					numberBulbsShining++;
-				} else {
-					break;
-				}
-			}
+			int idx = this.order[this.numberBulbsOn] - 1;
+			this.numberBulbsOn++;
+			this.lightString[idx].turnOn();
 		}
 
-		public void print() {
-			System.out.print(this.lightString.stream().
+		public String printShiningState() {
+			return (Arrays.stream(this.lightString).
 					map(l -> l.isShining() ? "1" : "0")
-					.collect(Collectors.joining(" ", "Shining: [", "] " )));
-			System.out.println(this.lightString.stream().
+					.collect(Collectors.joining(" ", "Shining: [", "]" )));
+		}
+		public String printOnState() {
+			return (Arrays.stream(this.lightString).
 					map(l -> l.isOn() ? "1" : "0")
-					.collect(Collectors.joining(" ", " On: [", "] " )));
+					.collect(Collectors.joining(" ", "On: [", "]" )));			
+		}
+		public String printPredecessors() {
+			return (Arrays.stream(this.lightString).filter(l -> l.predecessor != null)
+					.map(l -> String.valueOf(l.predecessor.getId()))
+					.collect(Collectors.joining(" ", "Predecessors: [", "]" )));
 		}
 	}
-	interface ShineObserver {
-		void shineAlertHandler();
-		void setShineObserver(ShineObserver neighbor);
-	}
-	
 	// Considered using state pattern ShiningBulb DimBulb, but the ShiningBulb has very few behaviors
-	public class Bulb implements ShineObserver{
+	public static class Bulb implements Shiner, ShineObserver {
 		private boolean shining = false; // set by evalShining()
 		private int id;
 		private boolean on = false;
 		private Bulb predecessor;
-		private ShineObserver shineObserver;
+		private Collection<ShineObserver> shineObserver = new HashSet<>(2);
 
 		Bulb(int id) {
 			this.id = id;
@@ -103,10 +133,9 @@ public class BulbExercise {
 		private void setPredecessorAndObserver(Bulb predecessor) {
 			this.predecessor = predecessor;
 			if (predecessor != null) {
-				predecessor.setShineObserver(this);
+				predecessor.registerShineObserver(this);
 			}
 		}
-
 		void turnOn() {
 			System.out.printf("%s turnedOn%n", getId());
 			this.on = true;
@@ -142,8 +171,10 @@ public class BulbExercise {
 		void setShining(boolean shining) {
 			System.out.printf("%s setShining %s%n", getId(), shining);
 			if (shining) {
-				if (!this.shining && this.shineObserver != null) {
-					this.shineObserver.shineAlertHandler();
+				if (!this.shining) {
+					this.shineObserver.stream().forEach(ShineObserver::shineAlertHandler);
+					// alerting won't be used again so we can remove(to make sure)
+					this.shineObserver = Collections.emptySet();
 				}
 				this.shining = shining;
 			}
@@ -163,8 +194,8 @@ public class BulbExercise {
 			setShining(isOn());
 		}
 		@Override
-		public void setShineObserver(ShineObserver neighbor) {
-			this.shineObserver = neighbor;
+		public void registerShineObserver(ShineObserver shineObserver) {
+			this.shineObserver.add(shineObserver);
 		}
 
 	}
@@ -172,6 +203,5 @@ public class BulbExercise {
 		int[] myInt = { 1, 3, 2, 5, 4 };
 		BulbExercise mySolution = new BulbExercise();
 		mySolution.solution(myInt);
-		System.out.println("complete");
 	}
 }
