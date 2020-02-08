@@ -5,8 +5,8 @@ import java.util.LinkedList;
 
 /**
  * 
- * Given a string determine if it is a palindrome
- *
+ * Given a string determine if it is a palindrome. I wanted to see how using streams 
+ * and method references might adjust the readability of the solution
  */
 public class Palindrome {
 	
