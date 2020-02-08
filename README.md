@@ -13,4 +13,6 @@ run .`/gradlew assemble` to build outside of your IDE, classes will be generated
 
 `./gradlew build` to build and run unit tests 
 
-##### 
+##### Exercise Descriptions
+Codility exercises are described in the /docs directory via screenshot
+HackerRank exercises have a link to the problem in the class
