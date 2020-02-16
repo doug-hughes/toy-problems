@@ -20,7 +20,13 @@ repositories {
     // You can declare any Maven/Ivy/file repository here.
     jcenter()
 }
-
+configurations {
+    tsqltCompile.extendsFrom testCompile
+    tsqltRuntime.extendsFrom testRuntime
+    tsqltImplementation.extendsFrom testImplementation
+    tsqltRuntimeOnly.extendsFrom testRuntimeOnly
+    tsqltAnnotationProcessor.extendsFrom testAnnotationProcessor
+}
 dependencies {
     // This dependency is exported to consumers, that is to say found on their compile classpath.
     api 'org.apache.commons:commons-math3:3.6.1'
@@ -30,4 +36,20 @@ dependencies {
 
     // Use JUnit test framework
     testImplementation 'org.junit.jupiter:junit-jupiter:5.+'
+    // https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc
+    implementation group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '8.2.0.jre13'
+}
+sourceSets {
+    tsqlt {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/tsqlt/java')
+        }
+        resources.srcDir file('src/tsqlt/resources')
+    }
+}
+task tsqlt(type: Test) {
+    testClassesDirs = sourceSets.tsqlt.output.classesDirs
+    classpath = sourceSets.tsqlt.runtimeClasspath
 }
